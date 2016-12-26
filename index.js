@@ -17,6 +17,7 @@ const BC_RPC = {
   createMultiSig: [],
   createRawTransaction: [],
   decodeRawTransaction: [],
+  disconnectNode: [],
   dumpPrivKey: [],
   encryptWallet: [],
   getAccount: [],
