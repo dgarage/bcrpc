@@ -6,6 +6,19 @@
   "scripts": {
     "test": "mocha tests.js"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dgarage/bcrpc.git",
+  },
+  "bugs": {
+    "url": "https://github.com/dgarage/bcrpc/issues",
+  },
+  "keywords": [
+    "bitcoin",
+    "rpc",
+    "module",
+    "utility",  
+  ],
   "author": "Karl-Johan Alm",
   "license": "ISC",
   "devDependencies": {
