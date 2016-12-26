@@ -20,6 +20,7 @@ const BC_RPC = {
   disconnectNode: [],
   dumpPrivKey: [],
   encryptWallet: [],
+  fundRawTransaction: [],
   generate: [],
   getAccount: [],
   getAccountAddress: [],
