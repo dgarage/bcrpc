@@ -8,16 +8,16 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/dgarage/bcrpc.git",
+    "url": "https://github.com/dgarage/bcrpc.git"
   },
   "bugs": {
-    "url": "https://github.com/dgarage/bcrpc/issues",
+    "url": "https://github.com/dgarage/bcrpc/issues"
   },
   "keywords": [
     "bitcoin",
     "rpc",
     "module",
-    "utility",  
+    "utility"
   ],
   "author": "Karl-Johan Alm",
   "license": "ISC",
