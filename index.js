@@ -130,7 +130,7 @@ const BC_RPC = {
 
 const slice = (arr, start, end) => Array.prototype.slice.call(arr, start, end);
 
-function RpcAgent(opts = {}) {
+function RpcAgent (opts = {}) {
   this.host = opts.host || '127.0.0.1';
   this.port = opts.port || 8332;
   this.user = opts.user || 'user';
@@ -138,59 +138,91 @@ function RpcAgent(opts = {}) {
   this.prot = opts.ssl ? https : http;
 }
 
-function rpc(request, callback) {
-  const requestSerialized = JSON.stringify(request);
-  const auth = new Buffer(`${this.user}:${this.pass}`).toString('base64');
-  const options = {
-    host: this.host,
-    port: this.port,
-    path: '/',
-    method: 'POST',
-  };
-  let err = null;
-  const req = this.prot.request(options, (res) => {
-    let buf = '';
-    res.on('data', (data) => {
-      buf += data;
+function rpc (request, callback) {
+  return new Promise((resolve, reject) => {
+    const requestSerialized = JSON.stringify(request);
+    const auth = new Buffer(`${this.user}:${this.pass}`).toString('base64');
+    const options = {
+      host: this.host,
+      port: this.port,
+      path: '/',
+      method: 'POST',
+    };
+    let err = null;
+    const req = this.prot.request(options, (res) => {
+      let buf = '';
+      res.on('data', (data) => {
+        buf += data;
+      });
+      res.on('end', () => {
+        if (res.statusCode === 401) {
+          if (this.calb) {
+            return callback(new Error('bitcoin JSON-RPC connection rejected: 401 unauthorized'));
+          }
+          return reject(new Error('bitcoin JSON-RPC connection rejected: 401 unauthorized'));
+        }
+        if (res.statusCode === 403) {
+          if (this.calb) {
+            return callback(new Error('bitcoin JSON-RPC connection rejected: 403 forbidden'));
+          }
+          return reject(new Error('bitcoin JSON-RPC connection rejected: 403 forbidden'));
+        }
+        if (err) {
+          if (this.calb) {
+            return callback(err);
+          }
+          return reject(err);
+        }
+        let bufDeserialized;
+        try {
+          bufDeserialized = JSON.parse(buf);
+        } catch (e) {
+          if (this.calb) {
+            return callback(e);
+          }
+          return reject(e);
+        }
+        if (this.calb) {
+          return callback(bufDeserialized.error, bufDeserialized);
+        }
+        if (bufDeserialized.error) {
+          return reject(bufDeserialized.error);
+        }
+        return resolve(bufDeserialized.result);
+      });
     });
-    res.on('end', () => {
-      if (res.statusCode === 401) {
-        return callback(new Error('bitcoin JSON-RPC connection rejected: 401 unauthorized'));
-      }
-      if (res.statusCode === 403) {
-        return callback(new Error('bitcoin JSON-RPC connection rejected: 403 forbidden'));
-      }
-      if (err) {
+    req.on('error', (e) => {
+      err = new Error(`Could not connect to bitcoin via RPC at \
+            host: ${this.host} port: ${this.port} Error: ${e.message}`);
+      if (this.calb) {
         return callback(err);
       }
-      let bufDeserialized;
-      try {
-        bufDeserialized = JSON.parse(buf);
-      } catch (e) {
-        return callback(e);
-      }
-      return callback(bufDeserialized.error, bufDeserialized);
+      return reject(err);
     });
-  });
-  req.on('error', (e) => {
-    err = new Error(`Could not connect to bitcoin via RPC at \
-host: ${this.host} port: ${this.port} Error: ${e.message}`);
-    callback(err);
-  });
 
-  req.setHeader('Content-Length', requestSerialized.length);
-  req.setHeader('Content-Type', 'application/json');
-  req.setHeader('Authorization', `Basic ${auth}`);
-  req.write(requestSerialized);
-  req.end();
+    req.setHeader('Content-Length', requestSerialized.length);
+    req.setHeader('Content-Type', 'application/json');
+    req.setHeader('Authorization', `Basic ${auth}`);
+    req.write(requestSerialized);
+    req.end();
+  });
 }
 
 for (const cmd of Object.keys(BC_RPC)) {
-  RpcAgent.prototype[cmd] = function rpccmd(...args) {
-    rpc.call(this, {
+  RpcAgent.prototype[cmd] = function rpccmd (...args) {
+    this.calb = typeof args[args.length - 1] === 'function';
+    if (this.calb) {
+      return rpc.call(this, {
+        method: cmd.toLowerCase(),
+        params: slice(args, 0, args.length - 1),
+      }, args[args.length - 1]);
+    }
+
+    return rpc.call(this, {
       method: cmd.toLowerCase(),
-      params: slice(args, 0, args.length - 1),
-    }, args[args.length - 1]);
+      params: args
+    });
+
   };
 }
 
