@@ -31,11 +31,12 @@ const BC_RPC = {
   // deprecated: estimateFee [was never added to bcrpc]
   estimateSmartFee: [],
   fundRawTransaction: [],
-  generate: [],
+  generate: [], // deprecated
   generateToAddress: [],
   getAccount: [],
   getAccountAddress: [],
   getAddedNodeInfo: [],
+  getAddressInfo: [],
   getAddressesByAccount: [],
   getBalance: [],
   getBestBlockHash: [],
@@ -115,7 +116,9 @@ const BC_RPC = {
   setTxFee: [],
   signMessage: [],
   signMessageWithPrivKey: [],
-  signRawTransaction: [],
+  signRawTransaction: [], // deprecated
+  signRawTransactionWithKey: [],
+  signRawTransactionWithWallet: [],
   stop: [],
   submitBlock: [],
   uptime: [],
