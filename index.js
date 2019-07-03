@@ -4,6 +4,7 @@
 
 const http = require('http');
 const https = require('https');
+var fs = require('fs');
 
 /**
  * Source: https://en.bitcoin.it/wiki/Original_Bitcoin_client/API_calls_list
@@ -13,31 +14,33 @@ const BC_RPC = {
   abandonTransaction: [],
   abortRescan: [],
   addMultiSigAddress: [],
-  addWitnessAddress: [],
   addNode: [],
+  analyzePSBT: [],
   backupWallet: [],
   bumpFee: [],
   clearBanned: [],
+  combinePSBT: [],
   combineRawTransaction: [],
-  convertPoints: [],
+  convertToPSBT: [],
   createMultiSig: [],
+  createPSBT: [],
   createRawTransaction: [],
+  createWallet: [],
+  decodePSBT: [],
   decodeRawTransaction: [],
   decodeScript: [],
+  deriveAddresses: [],
   disconnectNode: [],
   dumpPrivKey: [],
   dumpWallet: [],
   encryptWallet: [],
-  // deprecated: estimateFee [was never added to bcrpc]
   estimateSmartFee: [],
+  finalizePSBT: [],
   fundRawTransaction: [],
-  generate: [], // deprecated
   generateToAddress: [],
-  getAccount: [],
-  getAccountAddress: [],
   getAddedNodeInfo: [],
+  getAddressesByLabel: [],
   getAddressInfo: [],
-  getAddressesByAccount: [],
   getBalance: [],
   getBestBlockHash: [],
   getBlock: [],
@@ -45,14 +48,13 @@ const BC_RPC = {
   getBlockCount: [],
   getBlockHash: [],
   getBlockHeader: [],
+  getBlockStats: [],
   getBlockTemplate: [],
   getChainTips: [],
   getChainTxStats: [],
   getConnectionCount: [],
+  getDescriptorInfo: [],
   getDifficulty: [],
-  getGenerate: [],
-  getHashesPerSec: [],
-  getInfo: [],
   getMemoryInfo: [],
   getMempoolAncestors: [],
   getMempoolDescendants: [],
@@ -63,20 +65,21 @@ const BC_RPC = {
   getNetworkHashPS: [],
   getNetworkInfo: [],
   getNewAddress: [],
+  getNodeAddresses: [],
   getPeerInfo: [],
   getRawChangeAddress: [],
-  getRawMemPool: [], // kept for backwards compatibility
   getRawMempool: [],
   getRawTransaction: [],
-  getReceivedByAccount: [],
   getReceivedByAddress: [],
+  getReceivedByLabel: [],
+  getRPCInfo: [],
   getTransaction: [],
   getTxOut: [],
   getTxOutProof: [],
   getTxOutSetInfo: [],
   getUnconfirmedBalance: [],
   getWalletInfo: [],
-  getWork: [],
+  getZMQNotifications: [],
   help: [],
   importAddress: [],
   importMulti: [],
@@ -84,51 +87,56 @@ const BC_RPC = {
   importPrunedFunds: [],
   importPubKey: [],
   importWallet: [],
+  joinPSBTs: [],
   invalidateBlock: [],
   keyPoolRefill: [],
-  listAccounts: [],
   listAddressGroupings: [],
   listBanned: [],
+  listLabels: [],
   listLockUnspent: [],
-  listReceivedByAccount: [],
   listReceivedByAddress: [],
+  listReceivedByLabel: [],
   listSinceBlock: [],
   listTransactions: [],
   listUnspent: [],
+  listWalletDir: [],
   listWallets: [],
+  loadWallet: [],
   lockUnspent: [],
-  move: [],
+  logging: [],
   ping: [],
   preciousBlock: [],
   prioritiseTransaction: [],
   pruneBlockChain: [],
-  queryPoints: [],
   removePrunedFunds: [],
+  rescanBlockChain: [],
   saveMempool: [],
-  sendFrom: [],
+  scanTxOutSet: [],
   sendMany: [],
   sendRawTransaction: [],
   sendToAddress: [],
-  setAccount: [],
   setBan: [],
-  setGenerate: [],
-  setNetworkActive: [],
   setTxFee: [],
   signMessage: [],
   signMessageWithPrivKey: [],
-  signRawTransaction: [], // deprecated
   signRawTransactionWithKey: [],
   signRawTransactionWithWallet: [],
   stop: [],
   submitBlock: [],
+  submitHeader: [],
+  testMempoolAccept: [],
+  unloadWallet: [],
   uptime: [],
+  utxoUpdatePSBT: [],
   validateAddress: [],
   verifyChain: [],
   verifyMessage: [],
   verifyTxOutProof: [],
+  walletCreateFundedPSBT: [],
   walletLock: [],
   walletPassPhrase: [],
   walletPassphraseChange: [],
+  walletProcessPSBT: [],
 };
 
 const slice = (arr, start, end) => Array.prototype.slice.call(arr, start, end);
@@ -136,15 +144,41 @@ const slice = (arr, start, end) => Array.prototype.slice.call(arr, start, end);
 function RpcAgent (opts = {}) {
   this.host = opts.host || '127.0.0.1';
   this.port = opts.port || 8332;
-  this.user = opts.user || 'user';
-  this.pass = opts.pass || 'pass';
+  this.user = opts.user;
+  this.pass = opts.pass;
+  this.cookie = opts.cookie;
   this.prot = opts.ssl ? https : http;
+  console.log(`cookie = ${this.cookie}`);
+}
+
+RpcAgent.prototype.get_auth = function() {
+  var auth;
+  if (this.user && this.pass) {
+    auth = `${this.user}:${this.pass}`;
+    console.log(`auth = ${auth} from user/pass`);
+  } else if (this.cookie) {
+    auth = fs.readFileSync(this.cookie, 'utf8');
+    console.log(`auth = ${auth} from cookie`);
+  } else {
+    var homedir = require('os').homedir();
+    try {
+      auth = fs.readFileSync(`${homedir}/.bitcoin/.cookie`, 'utf8');
+    } catch (e) {
+      try {
+        auth = fs.readFileSync(`${homedir}/Library/Application Support/Bitcoin/.cookie`, 'utf8');
+      } catch (e2) {
+        console.log('cannot find bitcoin cookie file; please provide it on startup');
+      }
+    }
+  }
+  return Buffer.from(auth).toString('base64');
 }
 
 function rpc (request, callback) {
   return new Promise((resolve, reject) => {
     const requestSerialized = JSON.stringify(request);
-    const auth = new Buffer(`${this.user}:${this.pass}`).toString('base64');
+    const auth = this.get_auth();
+    console.log(`auth = ${auth}`);
     const options = {
       host: this.host,
       port: this.port,

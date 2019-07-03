@@ -13,8 +13,9 @@ const client = new RpcClient({
   prot: 'http',
   host: process.env.BITCOIND_HOST || 'localhost',
   port: process.env.BITCOIND_PORT || 18332,
-  user: process.env.BITCOIND_USER || 'username',
-  pass: process.env.BITCOIND_PASS || 'password',
+  user: process.env.BITCOIND_USER,
+  pass: process.env.BITCOIND_PASS,
+  cookie: process.env.BITCOIND_COOKIE,
 });
 
 function checkBitcoind(mcb) {
@@ -26,7 +27,7 @@ function checkBitcoind(mcb) {
   async.whilst(
     () => waitForBitcoind && expiry > new Date().getTime(),
     (cb) => {
-      client.getInfo((err, gbt) => {
+      client.getBlockCount((err, gbt) => {
         error = err;
         if (err) {
           if (!gbt || (err.code && err.code === -9)) {
@@ -56,7 +57,8 @@ function checkBitcoind(mcb) {
             console.log('unknown bitcoind error; make sure BITCOIND_HOST and BITCOIND_PORT ' +
               'environment variables are set; e.g.\n' +
               '    BITCOIND_HOST=localhost BITCOIND_PORT=20003 npm test');
-            waitForBitcoind = false;
+            console.log(`error = ${JSON.stringify(err)}`);
+              waitForBitcoind = false;
             cb();
           }
         } else {
@@ -94,7 +96,7 @@ describe('BitcoinD', () => {
 
 describe('bcrpc', () => {
   it('can get info', (done) => {
-    client.getInfo((err, info) => {
+    client.getConnectionCount((err, info) => {
       expect(err).to.be.null;
       expect(info).to.not.be.null;
       done();
