@@ -148,7 +148,6 @@ function RpcAgent (opts = {}) {
   this.pass = opts.pass;
   this.cookie = opts.cookie;
   this.prot = opts.ssl ? https : http;
-  console.log(`cookie = ${this.cookie}`);
 }
 
 RpcAgent.prototype.get_auth = function() {
