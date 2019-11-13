@@ -154,10 +154,8 @@ RpcAgent.prototype.get_auth = function() {
   var auth;
   if (this.user && this.pass) {
     auth = `${this.user}:${this.pass}`;
-    console.log(`auth = ${auth} from user/pass`);
   } else if (this.cookie) {
     auth = fs.readFileSync(this.cookie, 'utf8');
-    console.log(`auth = ${auth} from cookie`);
   } else {
     var homedir = require('os').homedir();
     try {
@@ -177,7 +175,6 @@ function rpc (request, callback) {
   return new Promise((resolve, reject) => {
     const requestSerialized = JSON.stringify(request);
     const auth = this.get_auth();
-    console.log(`auth = ${auth}`);
     const options = {
       host: this.host,
       port: this.port,
