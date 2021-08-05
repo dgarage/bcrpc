@@ -1,6 +1,6 @@
 {
   "name": "bcrpc",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "description": "Bitcoin RPC wrapper",
   "main": "index.js",
   "scripts": {
