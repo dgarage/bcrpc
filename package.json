@@ -2,7 +2,7 @@
   "name": "bcrpc",
   "version": "0.2.2",
   "description": "Bitcoin RPC wrapper",
-  "main": "index.js",
+  "main": "index",
   "scripts": {
     "test": "mocha tests.js"
   },
