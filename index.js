@@ -182,6 +182,7 @@ const slice = (arr, start, end) => Array.prototype.slice.call(arr, start, end);
 function RpcAgent (opts = {}) {
   this.host = opts.host || '127.0.0.1';
   this.port = opts.port || 8332;
+  this.wallet = opts.wallet || undefined;
   this.user = opts.user;
   this.pass = opts.pass;
   this.cookie = opts.cookie;
@@ -216,7 +217,7 @@ function rpc (request, callback) {
     const options = {
       host: this.host,
       port: this.port,
-      path: '/',
+      path: this.wallet ? `/wallet/${this.wallet}` : '/',
       method: 'POST',
     };
     let err = null;
